@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Anket Oluştur</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* CSS kodları */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7fa; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        h1 { color: #007bff; text-align: center; margin-bottom: 30px; }
+        .input-grup { margin-bottom: 25px; }
+        .input-grup label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        .input-grup input, .input-grup textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .secenekler-grup { display: flex; gap: 20px; margin-bottom: 25px; }
+        .secenek-alan { flex: 1; padding: 15px; border: 1px dashed #aaa; border-radius: 8px; }
+        .buton { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; background-color: #28a745; color: white; transition: background-color 0.3s ease; }
+        .buton:hover { background-color: #218838; }
+        .geri-don { display: block; text-align: center; margin-top: 20px; color: #007bff; text-decoration: none; }
+        
+        /* YENİ SÜRÜKLE-BIRAK STİLLERİ */
+        .drop-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            background-color: #eaf3ff;
+            transition: background-color 0.3s;
+        }
+        .drop-area.highlight {
+            background-color: #c9e2ff;
+        }
+        .drop-area p {
+            margin: 0;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .preview-img {
+            max-width: 100%;
+            max-height: 150px;
+            display: none; /* Başlangıçta gizli */
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        /* Dosya input'unu gizle */
+        .file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Anket Yayınla</h1>
+
+        <form id="anket-olustur-formu">
+            <div class="input-grup">
+                <label for="baslik">Kararsız Kaldığın Konu (Başlık/Soru)</label>
+                <input type="text" id="baslik" placeholder="Örnek: Hangi renk daha iyi?" required>
+            </div>
+            
+            <div class="input-grup">
+                <label for="sure">Oylama Süresi (Saniye)</label>
+                <input type="number" id="sure" value="60" min="30" max="3600" required>
+            </div>
+
+            <div class="secenekler-grup">
+                <div class="secenek-alan">
+                    <h3>1. Seçenek</h3>
+                    <input type="file" id="dosya1" class="file-input" accept="image/*">
+                    <div class="drop-area" data-secenek="1">
+                        <p>Fotoğrafı Buraya Sürükle veya Tıkla</p>
+                        <img id="preview1" class="preview-img" alt="Önizleme 1">
+                    </div>
+                </div>
+                
+                <div class="secenek-alan">
+                    <h3>2. Seçenek</h3>
+                    <input type="file" id="dosya2" class="file-input" accept="image/*">
+                    <div class="drop-area" data-secenek="2">
+                        <p>Fotoğrafı Buraya Sürükle veya Tıkla</p>
+                        <img id="preview2" class="preview-img" alt="Önizleme 2">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="buton">Anketi Yayınla</button>
+        </form>
+        
+        <a href="anlikgorus.html" class="geri-don">Ana Akışa Geri Dön</a>
+    </div>
+
+    <script>
+        // Sayfa yüklendiğinde giriş kontrolü yap
+        if (!sessionStorage.getItem('loggedInUser')) {
+            alert("Anket oluşturmak için lütfen giriş yapın.");
+            window.location.href = 'giris.html';
+        }
+        
+        // --------------------------------------------------
+        // SÜRÜKLE-BIRAK VE DOSYA OKUMA MANTIĞI
+        // --------------------------------------------------
+        
+        const dropAreas = document.querySelectorAll('.drop-area');
+        const dosya1Input = document.getElementById('dosya1');
+        const dosya2Input = document.getElementById('dosya2');
+        
+        // Yüklenen resimlerin geçici bellekte tutulacağı objeler (Base64 formatında)
+        const resimVerileri = {
+            resim1: null,
+            resim2: null
+        };
+
+        // Resim önizlemesini ve Base64 verisini günceller
+        function handleFile(file, secenekNo) {
+            if (!file || !file.type.startsWith('image/')) {
+                alert('Lütfen geçerli bir resim dosyası seçin.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Base64 verisini kaydet
+                resimVerileri['resim' + secenekNo] = e.target.result; 
+                
+                // Önizleme görselini göster
+                const previewImg = document.getElementById('preview' + secenekNo);
+                const dropArea = document.querySelector(`.drop-area[data-secenek="${secenekNo}"]`);
+                
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+                dropArea.querySelector('p').style.display = 'none'; 
+            };
+            reader.readAsDataURL(file); // Dosyayı Base64 string'e dönüştür
+        }
+
+        // Drop Area olay dinleyicileri
+        dropAreas.forEach(area => {
+            const secenekNo = area.dataset.secenek;
+            const fileInput = document.getElementById('dosya' + secenekNo);
+
+            // 1. Sürükleme Olayları (Stil Değişiklikleri)
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('highlight');
+            });
+            area.addEventListener('dragleave', (e) => {
+                area.classList.remove('highlight');
+            });
+
+            // 2. Tıklama Olayı (Dosya Seçim Penceresini Aç)
+            area.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // 3. Bırakma Olayı (Dosyayı İşle)
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('highlight');
+                const file = e.dataTransfer.files[0];
+                handleFile(file, secenekNo);
+            });
+            
+            // 4. Dosya Input Değişim Olayı (Tıklamayla Dosya Seçimi)
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                handleFile(file, secenekNo);
+            });
+        });
+
+        // --------------------------------------------------
+        // ANKET OLUŞTURMA MANTIĞI (GÜNCELLENDİ)
+        // --------------------------------------------------
+        
+        const anketFormu = document.getElementById('anket-olustur-formu');
+        const localStorageKey = 'anketVerileri';
+
+        function anketleriGetir() {
+            const data = localStorage.getItem(localStorageKey);
+            return data ? JSON.parse(data) : [];
+        }
+
+        anketFormu.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Kontrol: Her iki resim de yüklendi mi?
+            if (!resimVerileri.resim1 || !resimVerileri.resim2) {
+                alert("Lütfen her iki seçenek için de resim yükleyin (sürükle-bırak veya tıklama ile).");
+                return;
+            }
+
+            const baslik = document.getElementById('baslik').value;
+            const sure = parseInt(document.getElementById('sure').value);
+
+            const mevcutAnketler = anketleriGetir();
+            
+            const newId = mevcutAnketler.length > 0 ? Math.max(...mevcutAnketler.map(a => a.id)) + 1 : 1;
+
+            const yeniAnket = {
+                id: newId,
+                baslik: baslik,
+                // Artık Base64 string'i gönderiyoruz
+                resimA: resimVerileri.resim1, 
+                resimB: resimVerileri.resim2, 
+                oylarA: 0,
+                oylarB: 0,
+                sureSaniye: sure,
+                votedUsers: [],
+                sureBasi: Date.now()
+            };
+
+            mevcutAnketler.push(yeniAnket);
+            localStorage.setItem(localStorageKey, JSON.stringify(mevcutAnketler));
+
+            alert("Anket başarıyla yayınlandı!");
+            
+            window.location.href = 'anlikgorus.html';
+        });
+    </script>
+</body>
+</html>

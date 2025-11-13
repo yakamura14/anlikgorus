@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AnlıkGörüş - Giriş / Kayıt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .auth-container { width: 90%; max-width: 400px; background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        h1 { color: #007bff; text-align: center; margin-bottom: 30px; }
+        h2 { text-align: center; color: #444; margin-top: 0; margin-bottom: 25px; }
+        .input-grup { margin-bottom: 20px; }
+        .input-grup label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        .input-grup input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .buton { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; transition: background-color 0.3s ease; }
+        #giris-buton { background-color: #007bff; color: white; margin-bottom: 15px; }
+        #kayit-buton { background-color: #28a745; color: white; }
+        #giris-buton:hover, #kayit-buton:hover { opacity: 0.9; }
+        .gecis-metni { text-align: center; margin-top: 25px; color: #666; cursor: pointer; }
+        .form-kayit { display: none; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h1>AnlıkGörüş</h1>
+
+        <form id="giris-formu" class="form-giris">
+            <h2>Giriş Yap</h2>
+            <div class="input-grup">
+                <label for="girisKullaniciAdi">Kullanıcı Adı / E-posta</label>
+                <input type="text" id="girisKullaniciAdi" required>
+            </div>
+            <div class="input-grup">
+                <label for="girisSifre">Şifre</label>
+                <input type="password" id="girisSifre" required>
+            </div>
+            <button type="submit" class="buton" id="giris-buton">Giriş Yap</button>
+        </form>
+
+        <form id="kayit-formu" class="form-kayit">
+            <h2>Kayıt Ol</h2>
+            <div class="input-grup">
+                <label for="kayitKullaniciAdi">Kullanıcı Adı</label>
+                <input type="text" id="kayitKullaniciAdi" required>
+            </div>
+             <div class="input-grup">
+                <label for="kayitEposta">E-posta</label>
+                <input type="email" id="kayitEposta" required>
+            </div>
+            <div class="input-grup">
+                <label for="kayitSifre">Şifre</label>
+                <input type="password" id="kayitSifre" required>
+            </div>
+            <button type="submit" class="buton" id="kayit-buton">Hesap Oluştur</button>
+        </form>
+
+        <p class="gecis-metni" onclick="formDegistir()">Hala hesabın yok mu? **Kayıt Ol**</p>
+    </div>
+
+    <script>
+        var girisFormu = document.getElementById('giris-formu');
+        var kayitFormu = document.getElementById('kayit-formu');
+        var gecisMetni = document.querySelector('.gecis-metni');
+        var kayitModu = false;
+
+        function formDegistir() {
+            kayitModu = !kayitModu;
+            if (kayitModu) {
+                girisFormu.style.display = 'none';
+                kayitFormu.style.display = 'block';
+                gecisMetni.innerHTML = 'Zaten hesabın var mı? **Giriş Yap**';
+            } else {
+                girisFormu.style.display = 'block';
+                kayitFormu.style.display = 'none';
+                gecisMetni.innerHTML = 'Hala hesabın yok mu? **Kayıt Ol**';
+            }
+        }
+
+        girisFormu.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            var kullaniciAdiGirilen = document.getElementById('girisKullaniciAdi').value;
+            var sifreGirilen = document.getElementById('girisSifre').value;
+            var kullanicilarStr = localStorage.getItem('kayitliKullanicilar');
+            var kullanicilar = kullanicilarStr ? JSON.parse(kullanicilarStr) : [];
+            
+            var eslesenKullanici = kullanicilar.find(function(user) {
+                return (user.kullaniciAdi === kullaniciAdiGirilen || user.eposta === kullaniciAdiGirilen) && user.sifre === sifreGirilen;
+            });
+
+            if (eslesenKullanici) {
+                alert("Giriş BAŞARILI! Hoş geldiniz, " + eslesenKullanici.kullaniciAdi);
+                // Başarılı girişte OTURUM KAYDETME
+                sessionStorage.setItem('loggedInUser', JSON.stringify({ 
+                    kullaniciAdi: eslesenKullanici.kullaniciAdi, 
+                    eposta: eslesenKullanici.eposta 
+                }));
+                // Ana sayfaya yönlendir
+                window.location.href = 'anlikgorus.html'; 
+            } else {
+                alert("Giriş bilgileri HATA! Lütfen kullanıcı adı, e-posta veya şifrenizi kontrol edin.");
+            }
+        });
+
+        kayitFormu.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            var yeniKullaniciAdi = document.getElementById('kayitKullaniciAdi').value;
+            var yeniEposta = document.getElementById('kayitEposta').value;
+            var yeniSifre = document.getElementById('kayitSifre').value;
+
+            var kullanicilarStr = localStorage.getItem('kayitliKullanicilar');
+            var kullanicilar = kullanicilarStr ? JSON.parse(kullanicilarStr) : [];
+            
+            var mevcutKullanici = kullanicilar.find(function(user) {
+                return user.kullaniciAdi === yeniKullaniciAdi || user.eposta === yeniEposta;
+            });
+
+            if (mevcutKullanici) {
+                alert("HATA: Bu kullanıcı adı veya e-posta zaten kayıtlı.");
+                return;
+            }
+            
+            var yeniKullanici = {
+                kullaniciAdi: yeniKullaniciAdi,
+                eposta: yeniEposta,
+                sifre: yeniSifre 
+            };
+            
+            kullanicilar.push(yeniKullanici);
+            localStorage.setItem('kayitliKullanicilar', JSON.stringify(kullanicilar));
+
+            alert("Kayıt başarılı! Lütfen Giriş Yapın.");
+            formDegistir(); 
+        });
+    </script>
+</body>
+</html>
