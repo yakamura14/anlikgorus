@@ -4,7 +4,6 @@
     <title>Anket Oluştur</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS kodları önceki anket_olustur.html ile aynıdır */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7fa; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
         h1 { color: #007bff; text-align: center; margin-bottom: 30px; }
@@ -23,6 +22,9 @@
         .drop-area p { margin: 0; color: #007bff; font-weight: bold; }
         .preview-img { max-width: 100%; max-height: 150px; display: none; margin-top: 10px; border-radius: 5px; }
         .file-input { display: none; }
+        
+        /* YENİ: Metin Alanı Stili */
+        .metin-secenek { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 10px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -44,19 +46,21 @@
                 <div class="secenek-alan">
                     <h3>1. Seçenek</h3>
                     <input type="file" id="dosya1" class="file-input" accept="image/*">
-                    <div class="drop-area" data-secenek="1">
+                    <div class="drop-area" data-secenek="A">
                         <p>Fotoğrafı Buraya Sürükle veya Tıkla</p>
                         <img id="preview1" class="preview-img" alt="Önizleme 1">
                     </div>
+                    <input type="text" id="metin1" class="metin-secenek" placeholder="Ya da seçenek metnini yazın (Örn: Kırmızı)">
                 </div>
                 
                 <div class="secenek-alan">
                     <h3>2. Seçenek</h3>
                     <input type="file" id="dosya2" class="file-input" accept="image/*">
-                    <div class="drop-area" data-secenek="2">
+                    <div class="drop-area" data-secenek="B">
                         <p>Fotoğrafı Buraya Sürükle veya Tıkla</p>
                         <img id="preview2" class="preview-img" alt="Önizleme 2">
                     </div>
+                    <input type="text" id="metin2" class="metin-secenek" placeholder="Ya da seçenek metnini yazın (Örn: Mavi)">
                 </div>
             </div>
 
@@ -65,9 +69,9 @@
         
         <a href="anlikgorus.html" class="geri-don">Ana Akışa Geri Dön</a>
     </div>
-    
+
     <script>
-        // Giriş Kontrolü (Firebase Auth)
+        // Giriş Kontrolü
         firebase.auth().onAuthStateChanged(user => {
             if (!user) {
                 alert("Anket oluşturmak için lütfen giriş yapın.");
@@ -76,7 +80,7 @@
         });
         
         // --------------------------------------------------
-        // SÜRÜKLE-BIRAK VE DOSYA OKUMA MANTIĞI (Öncekiyle aynı)
+        // SÜRÜKLE-BIRAK VE DOSYA OKUMA MANTIĞI (GÜNCELLENDİ)
         // --------------------------------------------------
         const dropAreas = document.querySelectorAll('.drop-area');
         const resimVerileri = { resimA: null, resimB: null }; // Base64 verilerini tutar
@@ -86,13 +90,18 @@
                 alert('Lütfen geçerli bir resim dosyası seçin.');
                 return;
             }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 resimVerileri[secenekAdi] = e.target.result; 
+                
                 const secenekNo = secenekAdi === 'resimA' ? 1 : 2;
                 const previewImg = document.getElementById('preview' + secenekNo);
-                const dropArea = document.querySelector(`.drop-area[data-secenek="${secenekNo}"]`);
+                const dropArea = document.querySelector(`.drop-area[data-secenek="${secenekAdi === 'resimA' ? 'A' : 'B'}"]`);
                 
+                // Metin alanını temizle
+                document.getElementById('metin' + secenekNo).value = ''; 
+
                 previewImg.src = e.target.result;
                 previewImg.style.display = 'block';
                 dropArea.querySelector('p').style.display = 'none'; 
@@ -100,28 +109,44 @@
             reader.readAsDataURL(file);
         }
 
+        // Tıklama sorununu çözen ana döngü
         dropAreas.forEach(area => {
-            const secenekNo = area.dataset.secenek;
-            const secenekAdi = secenekNo === '1' ? 'resimA' : 'resimB';
+            const secenekKodu = area.dataset.secenek; // 'A' veya 'B'
+            const secenekNo = secenekKodu === 'A' ? 1 : 2;
+            const secenekAdi = secenekKodu === 'A' ? 'resimA' : 'resimB';
             const fileInput = document.getElementById('dosya' + secenekNo);
 
+            // Tıklama olayını file input'a bağla (Çözüm 1)
+            area.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Sürükleme ve Bırakma
             area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('highlight'); });
             area.addEventListener('dragleave', (e) => { area.classList.remove('highlight'); });
-            area.addEventListener('click', () => { fileInput.click(); });
             area.addEventListener('drop', (e) => {
                 e.preventDefault();
                 area.classList.remove('highlight');
                 const file = e.dataTransfer.files[0];
                 handleFile(file, secenekAdi);
             });
+            
+            // Dosya input'u değiştiğinde (Tıklama sonrası)
             fileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 handleFile(file, secenekAdi);
             });
+            
+            // Metin alanı değiştiğinde resim verisini temizle
+            document.getElementById('metin' + secenekNo).addEventListener('input', () => {
+                resimVerileri[secenekAdi] = null; // Base64 verisini temizle
+                document.getElementById('preview' + secenekNo).style.display = 'none'; // Önizlemeyi gizle
+                area.querySelector('p').style.display = 'block'; // Sürükle yazısını göster
+            });
         });
 
         // --------------------------------------------------
-        // ANKET OLUŞTURMA VE FIREBASE'E KAYIT MANTIĞI (YENİ)
+        // ANKET OLUŞTURMA VE FIREBASE'E KAYIT MANTIĞI (GÜNCELLENDİ)
         // --------------------------------------------------
         const anketFormu = document.getElementById('anket-olustur-formu');
 
@@ -129,34 +154,39 @@
             e.preventDefault();
 
             const user = firebase.auth().currentUser;
-            if (!user || !resimVerileri.resimA || !resimVerileri.resimB) {
-                alert("Lütfen giriş yapın ve her iki seçenek için de resim yükleyin.");
+            const metin1 = document.getElementById('metin1').value.trim();
+            const metin2 = document.getElementById('metin2').value.trim();
+            
+            // Kontrol: Hem resim hem de metin yoksa uyarı ver
+            if (!resimVerileri.resimA && metin1 === '' || !resimVerileri.resimB && metin2 === '') {
+                alert("Lütfen her iki seçenek için de ya bir resim yükleyin ya da seçenek metni yazın.");
                 return;
             }
 
             const baslik = document.getElementById('baslik').value;
             const sure = parseInt(document.getElementById('sure').value);
             
-            // Kullanıcının görünen adını Firestore'dan çekme
             const userDoc = await db.collection("users").doc(user.uid).get();
             const gonderenAdi = userDoc.exists ? userDoc.data().kullaniciAdi : "Anonim Kullanıcı";
 
-
             const yeniAnket = {
                 baslik: baslik,
-                resimA: resimVerileri.resimA, 
-                resimB: resimVerileri.resimB, 
-                oylar: { A: 0, B: 0 }, // Oyları bir alt obje olarak tutacağız
-                oyKullananlar: [], // Bu diziye oy kullanan Firebase UID'leri eklenecek
+                // Resim yoksa, metni kaydet
+                resimA: resimVerileri.resimA || null,
+                metinA: metin1 || null,
+                resimB: resimVerileri.resimB || null,
+                metinB: metin2 || null,
+                
+                oylar: { A: 0, B: 0 }, 
+                oyKullananlar: [], 
                 sureSaniye: sure,
-                sureBasi: firebase.firestore.FieldValue.serverTimestamp(), // Sunucu saati ile kayıt
+                sureBasi: firebase.firestore.FieldValue.serverTimestamp(), 
                 gonderenId: user.uid,
                 gonderenAdi: gonderenAdi,
-                aktif: true // Anketin hala aktif olup olmadığını tutar
+                aktif: true
             };
 
             try {
-                // Anket verisini Firestore'a ekle
                 await db.collection("polls").add(yeniAnket);
 
                 alert("Anket başarıyla yayınlandı ve herkesle paylaşıldı!");
