@@ -4,7 +4,7 @@
     <title>Anket Oluştur</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS kodları */
+        /* CSS kodları önceki anket_olustur.html ile aynıdır */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7fa; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
         h1 { color: #007bff; text-align: center; margin-bottom: 30px; }
@@ -17,36 +17,12 @@
         .buton:hover { background-color: #218838; }
         .geri-don { display: block; text-align: center; margin-top: 20px; color: #007bff; text-decoration: none; }
         
-        /* YENİ SÜRÜKLE-BIRAK STİLLERİ */
-        .drop-area {
-            border: 2px dashed #007bff;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            position: relative;
-            background-color: #eaf3ff;
-            transition: background-color 0.3s;
-        }
-        .drop-area.highlight {
-            background-color: #c9e2ff;
-        }
-        .drop-area p {
-            margin: 0;
-            color: #007bff;
-            font-weight: bold;
-        }
-        .preview-img {
-            max-width: 100%;
-            max-height: 150px;
-            display: none; /* Başlangıçta gizli */
-            margin-top: 10px;
-            border-radius: 5px;
-        }
-        /* Dosya input'unu gizle */
-        .file-input {
-            display: none;
-        }
+        /* SÜRÜKLE-BIRAK STİLLERİ */
+        .drop-area { border: 2px dashed #007bff; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; position: relative; background-color: #eaf3ff; transition: background-color 0.3s; }
+        .drop-area.highlight { background-color: #c9e2ff; }
+        .drop-area p { margin: 0; color: #007bff; font-weight: bold; }
+        .preview-img { max-width: 100%; max-height: 150px; display: none; margin-top: 10px; border-radius: 5px; }
+        .file-input { display: none; }
     </style>
 </head>
 <body>
@@ -89,41 +65,31 @@
         
         <a href="anlikgorus.html" class="geri-don">Ana Akışa Geri Dön</a>
     </div>
-
+    
     <script>
-        // Sayfa yüklendiğinde giriş kontrolü yap
-        if (!sessionStorage.getItem('loggedInUser')) {
-            alert("Anket oluşturmak için lütfen giriş yapın.");
-            window.location.href = 'giris.html';
-        }
+        // Giriş Kontrolü (Firebase Auth)
+        firebase.auth().onAuthStateChanged(user => {
+            if (!user) {
+                alert("Anket oluşturmak için lütfen giriş yapın.");
+                window.location.href = 'giris.html';
+            }
+        });
         
         // --------------------------------------------------
-        // SÜRÜKLE-BIRAK VE DOSYA OKUMA MANTIĞI
+        // SÜRÜKLE-BIRAK VE DOSYA OKUMA MANTIĞI (Öncekiyle aynı)
         // --------------------------------------------------
-        
         const dropAreas = document.querySelectorAll('.drop-area');
-        const dosya1Input = document.getElementById('dosya1');
-        const dosya2Input = document.getElementById('dosya2');
-        
-        // Yüklenen resimlerin geçici bellekte tutulacağı objeler (Base64 formatında)
-        const resimVerileri = {
-            resim1: null,
-            resim2: null
-        };
+        const resimVerileri = { resimA: null, resimB: null }; // Base64 verilerini tutar
 
-        // Resim önizlemesini ve Base64 verisini günceller
-        function handleFile(file, secenekNo) {
+        function handleFile(file, secenekAdi) {
             if (!file || !file.type.startsWith('image/')) {
                 alert('Lütfen geçerli bir resim dosyası seçin.');
                 return;
             }
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                // Base64 verisini kaydet
-                resimVerileri['resim' + secenekNo] = e.target.result; 
-                
-                // Önizleme görselini göster
+                resimVerileri[secenekAdi] = e.target.result; 
+                const secenekNo = secenekAdi === 'resimA' ? 1 : 2;
                 const previewImg = document.getElementById('preview' + secenekNo);
                 const dropArea = document.querySelector(`.drop-area[data-secenek="${secenekNo}"]`);
                 
@@ -131,90 +97,74 @@
                 previewImg.style.display = 'block';
                 dropArea.querySelector('p').style.display = 'none'; 
             };
-            reader.readAsDataURL(file); // Dosyayı Base64 string'e dönüştür
+            reader.readAsDataURL(file);
         }
 
-        // Drop Area olay dinleyicileri
         dropAreas.forEach(area => {
             const secenekNo = area.dataset.secenek;
+            const secenekAdi = secenekNo === '1' ? 'resimA' : 'resimB';
             const fileInput = document.getElementById('dosya' + secenekNo);
 
-            // 1. Sürükleme Olayları (Stil Değişiklikleri)
-            area.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                area.classList.add('highlight');
-            });
-            area.addEventListener('dragleave', (e) => {
-                area.classList.remove('highlight');
-            });
-
-            // 2. Tıklama Olayı (Dosya Seçim Penceresini Aç)
-            area.addEventListener('click', () => {
-                fileInput.click();
-            });
-
-            // 3. Bırakma Olayı (Dosyayı İşle)
+            area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('highlight'); });
+            area.addEventListener('dragleave', (e) => { area.classList.remove('highlight'); });
+            area.addEventListener('click', () => { fileInput.click(); });
             area.addEventListener('drop', (e) => {
                 e.preventDefault();
                 area.classList.remove('highlight');
                 const file = e.dataTransfer.files[0];
-                handleFile(file, secenekNo);
+                handleFile(file, secenekAdi);
             });
-            
-            // 4. Dosya Input Değişim Olayı (Tıklamayla Dosya Seçimi)
             fileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                handleFile(file, secenekNo);
+                handleFile(file, secenekAdi);
             });
         });
 
         // --------------------------------------------------
-        // ANKET OLUŞTURMA MANTIĞI (GÜNCELLENDİ)
+        // ANKET OLUŞTURMA VE FIREBASE'E KAYIT MANTIĞI (YENİ)
         // --------------------------------------------------
-        
         const anketFormu = document.getElementById('anket-olustur-formu');
-        const localStorageKey = 'anketVerileri';
 
-        function anketleriGetir() {
-            const data = localStorage.getItem(localStorageKey);
-            return data ? JSON.parse(data) : [];
-        }
-
-        anketFormu.addEventListener('submit', function(e) {
+        anketFormu.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // Kontrol: Her iki resim de yüklendi mi?
-            if (!resimVerileri.resim1 || !resimVerileri.resim2) {
-                alert("Lütfen her iki seçenek için de resim yükleyin (sürükle-bırak veya tıklama ile).");
+            const user = firebase.auth().currentUser;
+            if (!user || !resimVerileri.resimA || !resimVerileri.resimB) {
+                alert("Lütfen giriş yapın ve her iki seçenek için de resim yükleyin.");
                 return;
             }
 
             const baslik = document.getElementById('baslik').value;
             const sure = parseInt(document.getElementById('sure').value);
-
-            const mevcutAnketler = anketleriGetir();
             
-            const newId = mevcutAnketler.length > 0 ? Math.max(...mevcutAnketler.map(a => a.id)) + 1 : 1;
+            // Kullanıcının görünen adını Firestore'dan çekme
+            const userDoc = await db.collection("users").doc(user.uid).get();
+            const gonderenAdi = userDoc.exists ? userDoc.data().kullaniciAdi : "Anonim Kullanıcı";
+
 
             const yeniAnket = {
-                id: newId,
                 baslik: baslik,
-                // Artık Base64 string'i gönderiyoruz
-                resimA: resimVerileri.resim1, 
-                resimB: resimVerileri.resim2, 
-                oylarA: 0,
-                oylarB: 0,
+                resimA: resimVerileri.resimA, 
+                resimB: resimVerileri.resimB, 
+                oylar: { A: 0, B: 0 }, // Oyları bir alt obje olarak tutacağız
+                oyKullananlar: [], // Bu diziye oy kullanan Firebase UID'leri eklenecek
                 sureSaniye: sure,
-                votedUsers: [],
-                sureBasi: Date.now()
+                sureBasi: firebase.firestore.FieldValue.serverTimestamp(), // Sunucu saati ile kayıt
+                gonderenId: user.uid,
+                gonderenAdi: gonderenAdi,
+                aktif: true // Anketin hala aktif olup olmadığını tutar
             };
 
-            mevcutAnketler.push(yeniAnket);
-            localStorage.setItem(localStorageKey, JSON.stringify(mevcutAnketler));
+            try {
+                // Anket verisini Firestore'a ekle
+                await db.collection("polls").add(yeniAnket);
 
-            alert("Anket başarıyla yayınlandı!");
-            
-            window.location.href = 'anlikgorus.html';
+                alert("Anket başarıyla yayınlandı ve herkesle paylaşıldı!");
+                window.location.href = 'anlikgorus.html';
+            } catch (error) {
+                console.error("Anket yayınlanırken hata oluştu: ", error);
+                alert("Anket yayınlanırken bir hata oluştu: " + error.message);
+            }
         });
     </script>
 </body>
