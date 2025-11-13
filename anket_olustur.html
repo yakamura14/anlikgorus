@@ -73,7 +73,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
-        // YAPILANDIRMA BİLGİLERİNİZ BURADA
+        // LÜTFEN KENDİ FIREBASE YAPILANDIRMA BİLGİLERİNİZİ EKLEYİN
         const firebaseConfig = {
             apiKey: "AIzaSyDqKxitrc3P8LXzHHhZb2utDay7WSvN1-w",
             authDomain: "anket-61fdf.firebaseapp.com",
@@ -167,7 +167,7 @@
             const metin1 = document.getElementById('metin1').value.trim();
             const metin2 = document.getElementById('metin2').value.trim();
             
-            // Zorunlu alan kontrolü: Hem resim hem de metin yoksa uyarı ver
+            // Zorunlu alan kontrolü
             if ((!resimVerileri.resimA && metin1 === '') || (!resimVerileri.resimB && metin2 === '')) {
                 alert("Lütfen her iki seçenek için de ya bir resim yükleyin ya da seçenek metni yazın.");
                 return;
@@ -176,7 +176,7 @@
             const baslik = document.getElementById('baslik').value;
             const sure = parseInt(document.getElementById('sure').value);
             
-            // Kullanıcının adını çekme (try-catch bloğu ile sağlamlaştırılmış)
+            // Kullanıcının adını çekme
             let gonderenAdi = "Anonim Kullanıcı";
             try {
                  const userDoc = await db.collection("users").doc(user.uid).get();
