@@ -50,7 +50,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
-        // 💡 YAPILANDIRMA BİLGİLERİNİZ BURADA
+        // LÜTFEN KENDİ FIREBASE YAPILANDIRMA BİLGİLERİNİZİ EKLEYİN
         const firebaseConfig = {
             apiKey: "AIzaSyDqKxitrc3P8LXzHHhZb2utDay7WSvN1-w",
             authDomain: "anket-61fdf.firebaseapp.com",
@@ -180,6 +180,7 @@
                     const anketData = change.doc.data();
 
                     if (change.type === "added" || change.type === "modified") {
+                        // Eğer anket artık aktif değilse, kartı kaldırma işlemi aşağıda halledilecek
                         anketKartiOlustur(docId, anketData);
                     } else if (change.type === "removed") {
                         const kartToRemove = document.querySelector(`.anket-karti[data-anket-id="${docId}"]`);
@@ -193,7 +194,8 @@
 
             }, error => {
                 console.error("Firebase dinleme hatası:", error);
-                anketAkisi.innerHTML = '<p style="text-align: center; color: red;">Veri yüklenirken hata oluştu.</p>';
+                // Hata durumunda ekrana tekrar "Anketler Yükleniyor" yerine hata mesajı yazdır
+                anketAkisi.innerHTML = '<p style="text-align: center; color: red;">Veri yüklenirken hata oluştu. (Konsolu kontrol edin)</p>';
             });
         }
         
@@ -215,9 +217,20 @@
                     
                     const anket = doc.data();
                     
+                    // 1. Süre kontrolü
+                    const sureBasiMs = anket.sureBasi.toDate().getTime();
+                    const sureGecen = Math.floor((Date.now() - sureBasiMs) / 1000);
+                    const kalanSaniye = anket.sureSaniye - sureGecen;
+                    if (kalanSaniye <= 0) {
+                        // Eğer süre bittiyse anketi pasif yap
+                        transaction.update(anketRef, { aktif: false });
+                        throw new Error("Oylama süresi sona ermiştir!"); 
+                    }
+
+                    // 2. Oy kullanıldı kontrolü
                     if (anket.oyKullananlar && anket.oyKullananlar.includes(currentUserId)) {
                         alert("Bu ankete daha önce oy kullandınız. Teşekkürler!");
-                        return;
+                        return; // Transaction'dan çık
                     }
 
                     const yeniOySayisi = (anket.oylar[secim] || 0) + 1;
@@ -240,7 +253,8 @@
         // ------------- SÜRE SAYACI MANTIĞI -------------
         
         function sureyiGuncelle(docId, anket) {
-            if (!anket.sureBasi || typeof anket.sureBasi.toDate !== 'function') return;
+            // sureBasi henüz gelmemişse veya fonksiyon değilse (Base64 data vs.) çık
+            if (!anket.sureBasi || typeof anket.sureBasi.toDate !== 'function') return; 
 
             const sureBasiMs = anket.sureBasi.toDate().getTime();
             const sureGecen = Math.floor((Date.now() - sureBasiMs) / 1000);
@@ -253,10 +267,12 @@
                 if(sureSayaci) sureSayaci.innerHTML = "Oylama BİTTİ!";
                 
                 if(anket.aktif !== false) {
+                     // Süre dolduğunda aktif durumunu pasif yap
                      db.collection("polls").doc(docId).update({aktif: false}).catch(e => console.error("Aktif durumu güncellenemedi:", e));
                 }
                 
                 if (kart) {
+                    // Kartı yavaşça kaldır
                     kart.style.opacity = '0';
                     setTimeout(() => {
                         kart.remove(); 
@@ -275,9 +291,6 @@
             
             if(sureSayaci) sureSayaci.innerHTML = `Kalan Süre: ${dakikaStr}:${saniyeStr}`;
         }
-
-
-        // Sayfa yüklendiğinde anketleri dinlemeye başla (Kullanıcı giriş yaptıktan sonra otomatik başlar)
     </script>
 </body>
 </html>
