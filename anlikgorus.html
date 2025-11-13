@@ -4,6 +4,7 @@
     <title>AnlıkGörüş - Canlı Akış</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* Ana Stiller */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7fa; padding-top: 60px; }
         .header { position: fixed; top: 0; left: 0; width: 100%; background-color: #007bff; color: white; padding: 10px 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         .header h1 { margin: 0; font-size: 20px; }
@@ -20,11 +21,14 @@
         .anket-baslik { text-align: center; color: #333; font-size: 18px; margin-bottom: 15px; }
         .secenekler-konteyner { display: flex; gap: 8px; height: 250px; }
         .secenek { flex: 1; position: relative; cursor: pointer; overflow: hidden; border-radius: 8px; transition: transform 0.2s; }
+        /* Resim Olmadığında Metnin Daha Net Görünmesi İçin Ayarlar */
         .resim { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
         .oy-gosterge { position: absolute; bottom: 0; left: 0; height: 100%; width: 0%; background: rgba(0, 123, 255, 0.4); z-index: 2; transition: width 0.5s ease-out; }
-        .oy-yuzdesi { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; font-weight: bold; color: white; text-shadow: 0 0 4px rgba(0, 0, 0, 0.6); z-index: 3; }
+        .oy-yuzdesi { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; font-weight: bold; z-index: 3; }
         .kalan-sure { text-align: center; margin-top: 15px; font-weight: bold; color: #dc3545; font-size: 14px; }
         .gonderen-bilgi { text-align: right; font-size: 12px; color: #777; margin-top: 10px; }
+        /* Metin Seçenekleri İçin Stiller */
+        .secenek-metin { position: absolute; top: 10px; width: 90%; text-align: center; color: #333; font-weight: bold; background: rgba(255, 255, 255, 0.8); padding: 5px; border-radius: 5px; z-index: 4; }
     </style>
 </head>
 <body>
@@ -41,15 +45,40 @@
         <p style="text-align: center; color: #777;">Anketler Yükleniyor...</p>
     </div>
     
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
     <script>
-        // Giriş Kontrolü ve UID Alma
+        // 💡 YAPILANDIRMA BİLGİLERİNİZ BURADA
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqKxitrc3P8LXzHHhZb2utDay7WSvN1-w",
+            authDomain: "anket-61fdf.firebaseapp.com",
+            projectId: "anket-61fdf",
+            storageBucket: "anket-61fdf.firebasestorage.app",
+            messagingSenderId: "1009992434674",
+            appId: "1:1009992434674:web:17a4b4d0dbf300c42b216b",
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+    </script>
+
+    <script>
         let currentUserId = null;
+        const anketAkisi = document.getElementById('anket-akisi');
+        const defaultImageURL = 'https://via.placeholder.com/300x400?text=Resim+Yok'; 
+        const timerIntervals = {}; 
+        
+        // Giriş Kontrolü ve UID Alma
         firebase.auth().onAuthStateChanged(user => {
             if (!user) {
                 alert("Bu sayfayı görüntülemek için lütfen giriş yapın.");
                 window.location.href = 'giris.html';
             } else {
                 currentUserId = user.uid;
+                anketleriDinle(); // Kullanıcı ID'si alındıktan sonra dinlemeyi başlat
             }
         });
 
@@ -61,13 +90,11 @@
             });
         });
 
-        const anketAkisi = document.getElementById('anket-akisi');
-        const defaultImageURL = 'https://via.placeholder.com/300x400?text=Resim+Yok'; 
-        const timerIntervals = {}; 
-        
         // ------------- KART OLUŞTURMA VE GÜNCELLEME -------------
         
         function anketKartiOlustur(docId, anket) {
+            if(!currentUserId) return; // Kullanıcı ID'si yoksa kart oluşturma
+
             const oyKullanildi = anket.oyKullananlar && anket.oyKullananlar.includes(currentUserId);
             const oylanmisClass = oyKullanildi ? 'oylanmis' : '';
 
@@ -77,12 +104,15 @@
             const yuzdeA = toplamOy > 0 ? Math.round((oylarA / toplamOy) * 100) : 50;
             const yuzdeB = 100 - yuzdeA;
             
-            // Kullanıcı oy kullandıysa veya süre bittiyse tıklama engellenir
             const tiklamaEngeli = oyKullanildi;
             const clickHandler = tiklamaEngeli ? '' : `onclick="oyKullan('${docId}', 'A')"`;
             const clickHandler2 = tiklamaEngeli ? '' : `onclick="oyKullan('${docId}', 'B')"`;
+            
+            // Resim/Metin Kontrolleri
+            const resimA_var = !!anket.resimA;
+            const resimB_var = !!anket.resimB;
 
-            // Kart zaten varsa HTML'i yeniden oluşturmak yerine sadece güncelle
+            // Kart zaten varsa sadece oy yüzdelerini güncelle
             const existingCard = document.querySelector(`.anket-karti[data-anket-id="${docId}"]`);
             if (existingCard) {
                 existingCard.querySelector('#yuzde-A-' + docId).innerHTML = `${yuzdeA}%`;
@@ -104,15 +134,17 @@
                     <div class="secenekler-konteyner">
                         
                         <div class="secenek secenek-sol" ${clickHandler}>
-                            <img src="${anket.resimA || defaultImageURL}" alt="Seçenek A" class="resim">
+                            <img src="${anket.resimA || defaultImageURL}" alt="Seçenek A" class="resim" style="opacity: ${resimA_var ? 1 : 0.2};">
                             <div class="oy-gosterge A-gosterge" style="width: ${yuzdeA}%;"></div>
-                            <span class="oy-yuzdesi" id="yuzde-A-${docId}">${yuzdeA}%</span>
+                            <span class="oy-yuzdesi" id="yuzde-A-${docId}" style="color: ${resimA_var ? 'white' : '#333'}; text-shadow: ${resimA_var ? '0 0 4px rgba(0, 0, 0, 0.6)' : 'none'};">${yuzdeA}%</span>
+                            <span class="secenek-metin" style="display: ${anket.metinA ? 'block' : 'none'};">${anket.metinA || ''}</span>
                         </div>
 
                         <div class="secenek secenek-sag" ${clickHandler2}>
-                            <img src="${anket.resimB || defaultImageURL}" alt="Seçenek B" class="resim">
+                            <img src="${anket.resimB || defaultImageURL}" alt="Seçenek B" class="resim" style="opacity: ${resimB_var ? 1 : 0.2};">
                             <div class="oy-gosterge B-gosterge" style="width: ${yuzdeB}%;"></div>
-                            <span class="oy-yuzdesi" id="yuzde-B-${docId}">${yuzdeB}%</span>
+                            <span class="oy-yuzdesi" id="yuzde-B-${docId}" style="color: ${resimB_var ? 'white' : '#333'}; text-shadow: ${resimB_var ? '0 0 4px rgba(0, 0, 0, 0.6)' : 'none'};">${yuzdeB}%</span>
+                            <span class="secenek-metin" style="display: ${anket.metinB ? 'block' : 'none'};">${anket.metinB || ''}</span>
                         </div>
                     </div>
                     
@@ -141,7 +173,6 @@
               .limit(50)
               .onSnapshot(snapshot => {
                 
-                // Başlangıç mesajını temizle
                 if(anketAkisi.querySelector('p')) anketAkisi.innerHTML = ''; 
 
                 snapshot.docChanges().forEach(change => {
@@ -149,10 +180,8 @@
                     const anketData = change.doc.data();
 
                     if (change.type === "added" || change.type === "modified") {
-                        // Yeni anket eklendiğinde veya veri güncellendiğinde
                         anketKartiOlustur(docId, anketData);
                     } else if (change.type === "removed") {
-                        // Firebase'den silinirse kartı kaldır
                         const kartToRemove = document.querySelector(`.anket-karti[data-anket-id="${docId}"]`);
                         if (kartToRemove) kartToRemove.remove();
                     }
@@ -182,31 +211,24 @@
                 await db.runTransaction(async (transaction) => {
                     const doc = await transaction.get(anketRef);
 
-                    if (!doc.exists) { throw "Anket bulunamadı!"; }
+                    if (!doc.exists) { throw new Error("Anket bulunamadı!"); }
                     
                     const anket = doc.data();
                     
-                    // TEK OY KONTROLÜ
                     if (anket.oyKullananlar && anket.oyKullananlar.includes(currentUserId)) {
                         alert("Bu ankete daha önce oy kullandınız. Teşekkürler!");
-                        return; // İşlemi bitir
+                        return;
                     }
 
-                    // Oy sayısını artır
                     const yeniOySayisi = (anket.oylar[secim] || 0) + 1;
-                    
-                    // Oy kullananlar listesine kullanıcı ID'sini ekle
                     const yeniOyKullananlar = [...(anket.oyKullananlar || []), currentUserId];
 
-                    // Veritabanına yeni değerleri yaz
                     transaction.update(anketRef, {
                         [`oylar.${secim}`]: yeniOySayisi,
                         oyKullananlar: yeniOyKullananlar
                     });
                 });
                 
-                // Transaction başarılıysa arayüz otomatik güncellenecektir (onSnapshot sayesinde)
-                // Ama kullanıcıya bir mesaj verelim
                 alert("Oyunuz başarıyla kaydedildi!");
 
             } catch (error) {
@@ -218,7 +240,6 @@
         // ------------- SÜRE SAYACI MANTIĞI -------------
         
         function sureyiGuncelle(docId, anket) {
-            // Anketin başlangıç zamanı (Firestore Timestamp) henüz sunucudan gelmediyse bekle
             if (!anket.sureBasi || typeof anket.sureBasi.toDate !== 'function') return;
 
             const sureBasiMs = anket.sureBasi.toDate().getTime();
@@ -231,12 +252,10 @@
             if (kalanSaniye <= 0) {
                 if(sureSayaci) sureSayaci.innerHTML = "Oylama BİTTİ!";
                 
-                // Firebase'de aktif alanını false yap (bir daha çekilmesin)
                 if(anket.aktif !== false) {
                      db.collection("polls").doc(docId).update({aktif: false}).catch(e => console.error("Aktif durumu güncellenemedi:", e));
                 }
                 
-                // Kartı kaldır (Görsel temizlik)
                 if (kart) {
                     kart.style.opacity = '0';
                     setTimeout(() => {
@@ -258,8 +277,7 @@
         }
 
 
-        // Sayfa yüklendiğinde anketleri dinlemeye başla
-        anketleriDinle(); 
+        // Sayfa yüklendiğinde anketleri dinlemeye başla (Kullanıcı giriş yaptıktan sonra otomatik başlar)
     </script>
 </body>
 </html>
