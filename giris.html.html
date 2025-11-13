@@ -1,170 +1,144 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Anket Oluştur</title>
+    <title>AnlıkGörüş - Giriş / Kayıt</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS kodları önceki anket_olustur.html ile aynıdır */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7fa; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .auth-container { width: 90%; max-width: 400px; background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
         h1 { color: #007bff; text-align: center; margin-bottom: 30px; }
-        .input-grup { margin-bottom: 25px; }
+        h2 { text-align: center; color: #444; margin-top: 0; margin-bottom: 25px; }
+        .input-grup { margin-bottom: 20px; }
         .input-grup label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
-        .input-grup input, .input-grup textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .secenekler-grup { display: flex; gap: 20px; margin-bottom: 25px; }
-        .secenek-alan { flex: 1; padding: 15px; border: 1px dashed #aaa; border-radius: 8px; }
-        .buton { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; background-color: #28a745; color: white; transition: background-color 0.3s ease; }
-        .buton:hover { background-color: #218838; }
-        .geri-don { display: block; text-align: center; margin-top: 20px; color: #007bff; text-decoration: none; }
-        
-        /* SÜRÜKLE-BIRAK STİLLERİ */
-        .drop-area { border: 2px dashed #007bff; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; position: relative; background-color: #eaf3ff; transition: background-color 0.3s; }
-        .drop-area.highlight { background-color: #c9e2ff; }
-        .drop-area p { margin: 0; color: #007bff; font-weight: bold; }
-        .preview-img { max-width: 100%; max-height: 150px; display: none; margin-top: 10px; border-radius: 5px; }
-        .file-input { display: none; }
+        .input-grup input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .buton { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; transition: background-color 0.3s ease; }
+        #giris-buton { background-color: #007bff; color: white; margin-bottom: 15px; }
+        #kayit-buton { background-color: #28a745; color: white; }
+        #giris-buton:hover, #kayit-buton:hover { opacity: 0.9; }
+        .gecis-metni { text-align: center; margin-top: 25px; color: #666; cursor: pointer; }
+        .form-kayit { display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Anket Yayınla</h1>
+    <div class="auth-container">
+        <h1>AnlıkGörüş</h1>
 
-        <form id="anket-olustur-formu">
+        <form id="giris-formu" class="form-giris">
+            <h2>Giriş Yap</h2>
             <div class="input-grup">
-                <label for="baslik">Kararsız Kaldığın Konu (Başlık/Soru)</label>
-                <input type="text" id="baslik" placeholder="Örnek: Hangi renk daha iyi?" required>
+                <label for="girisEposta">E-posta</label>
+                <input type="email" id="girisEposta" required>
             </div>
-            
             <div class="input-grup">
-                <label for="sure">Oylama Süresi (Saniye)</label>
-                <input type="number" id="sure" value="60" min="30" max="3600" required>
+                <label for="girisSifre">Şifre</label>
+                <input type="password" id="girisSifre" required>
             </div>
-
-            <div class="secenekler-grup">
-                <div class="secenek-alan">
-                    <h3>1. Seçenek</h3>
-                    <input type="file" id="dosya1" class="file-input" accept="image/*">
-                    <div class="drop-area" data-secenek="1">
-                        <p>Fotoğrafı Buraya Sürükle veya Tıkla</p>
-                        <img id="preview1" class="preview-img" alt="Önizleme 1">
-                    </div>
-                </div>
-                
-                <div class="secenek-alan">
-                    <h3>2. Seçenek</h3>
-                    <input type="file" id="dosya2" class="file-input" accept="image/*">
-                    <div class="drop-area" data-secenek="2">
-                        <p>Fotoğrafı Buraya Sürükle veya Tıkla</p>
-                        <img id="preview2" class="preview-img" alt="Önizleme 2">
-                    </div>
-                </div>
-            </div>
-
-            <button type="submit" class="buton">Anketi Yayınla</button>
+            <button type="submit" class="buton" id="giris-buton">Giriş Yap</button>
         </form>
-        
-        <a href="anlikgorus.html" class="geri-don">Ana Akışa Geri Dön</a>
+
+        <form id="kayit-formu" class="form-kayit">
+            <h2>Kayıt Ol</h2>
+            <div class="input-grup">
+                <label for="kayitKullaniciAdi">Kullanıcı Adı (Görüntülenecek Ad)</label>
+                <input type="text" id="kayitKullaniciAdi" required>
+            </div>
+             <div class="input-grup">
+                <label for="kayitEposta">E-posta</label>
+                <input type="email" id="kayitEposta" required>
+            </div>
+            <div class="input-grup">
+                <label for="kayitSifre">Şifre</label>
+                <input type="password" id="kayitSifre" required>
+            </div>
+            <button type="submit" class="buton" id="kayit-buton">Hesap Oluştur</button>
+        </form>
+
+        <p class="gecis-metni" onclick="formDegistir()">Hala hesabın yok mu? **Kayıt Ol**</p>
     </div>
+
+    <!-- FIREBASE KÜTÜPHANE VE YAPILANDIRMASI (SDK v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // YAPILANDIRMA BİLGİLERİNİZ BURADA
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqKxitrc3P8LXzHHhZb2utDay7WSvN1-w",
+            authDomain: "anket-61fdf.firebaseapp.com",
+            projectId: "anket-61fdf",
+            storageBucket: "anket-61fdf.firebasestorage.app",
+            messagingSenderId: "1009992434674",
+            appId: "1:1009992434674:web:17a4b4d0dbf300c42b216b",
+        };
+
+        // Firebase'i Başlat
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+    </script> 
     
     <script>
-        // Giriş Kontrolü (Firebase Auth)
-        firebase.auth().onAuthStateChanged(user => {
-            if (!user) {
-                alert("Anket oluşturmak için lütfen giriş yapın.");
-                window.location.href = 'giris.html';
-            }
-        });
-        
-        // --------------------------------------------------
-        // SÜRÜKLE-BIRAK VE DOSYA OKUMA MANTIĞI (Öncekiyle aynı)
-        // --------------------------------------------------
-        const dropAreas = document.querySelectorAll('.drop-area');
-        const resimVerileri = { resimA: null, resimB: null }; // Base64 verilerini tutar
+        var girisFormu = document.getElementById('giris-formu');
+        var kayitFormu = document.getElementById('kayit-formu');
+        var gecisMetni = document.querySelector('.gecis-metni');
+        var kayitModu = false;
 
-        function handleFile(file, secenekAdi) {
-            if (!file || !file.type.startsWith('image/')) {
-                alert('Lütfen geçerli bir resim dosyası seçin.');
-                return;
+        function formDegistir() {
+            kayitModu = !kayitModu;
+            if (kayitModu) {
+                girisFormu.style.display = 'none';
+                kayitFormu.style.display = 'block';
+                gecisMetni.innerHTML = 'Zaten hesabın var mı? **Giriş Yap**';
+            } else {
+                girisFormu.style.display = 'block';
+                kayitFormu.style.display = 'none';
+                gecisMetni.innerHTML = 'Hala hesabın yok mu? **Kayıt Ol**';
             }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                resimVerileri[secenekAdi] = e.target.result; 
-                const secenekNo = secenekAdi === 'resimA' ? 1 : 2;
-                const previewImg = document.getElementById('preview' + secenekNo);
-                const dropArea = document.querySelector(`.drop-area[data-secenek="${secenekNo}"]`);
-                
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
-                dropArea.querySelector('p').style.display = 'none'; 
-            };
-            reader.readAsDataURL(file);
         }
 
-        dropAreas.forEach(area => {
-            const secenekNo = area.dataset.secenek;
-            const secenekAdi = secenekNo === '1' ? 'resimA' : 'resimB';
-            const fileInput = document.getElementById('dosya' + secenekNo);
-
-            area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('highlight'); });
-            area.addEventListener('dragleave', (e) => { area.classList.remove('highlight'); });
-            area.addEventListener('click', () => { fileInput.click(); });
-            area.addEventListener('drop', (e) => {
-                e.preventDefault();
-                area.classList.remove('highlight');
-                const file = e.dataTransfer.files[0];
-                handleFile(file, secenekAdi);
-            });
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                handleFile(file, secenekAdi);
-            });
+        // ---------- GİRİŞ İŞLEMİ (FIREBASE) ----------
+        girisFormu.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            var eposta = document.getElementById('girisEposta').value;
+            var sifre = document.getElementById('girisSifre').value;
+            
+            auth.signInWithEmailAndPassword(eposta, sifre)
+                .then((userCredential) => {
+                    alert("Giriş BAŞARILI! Hoş geldiniz.");
+                    window.location.href = 'anlikgorus.html'; 
+                })
+                .catch((error) => {
+                    alert("Giriş HATA! Lütfen e-posta veya şifrenizi kontrol edin. \nHata: " + error.message);
+                });
         });
 
-        // --------------------------------------------------
-        // ANKET OLUŞTURMA VE FIREBASE'E KAYIT MANTIĞI (YENİ)
-        // --------------------------------------------------
-        const anketFormu = document.getElementById('anket-olustur-formu');
+        // ---------- KAYIT İŞLEMİ (FIREBASE) ----------
+        kayitFormu.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            var yeniKullaniciAdi = document.getElementById('kayitKullaniciAdi').value;
+            var yeniEposta = document.getElementById('kayitEposta').value;
+            var yeniSifre = document.getElementById('kayitSifre').value;
 
-        anketFormu.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const user = firebase.auth().currentUser;
-            if (!user || !resimVerileri.resimA || !resimVerileri.resimB) {
-                alert("Lütfen giriş yapın ve her iki seçenek için de resim yükleyin.");
-                return;
-            }
-
-            const baslik = document.getElementById('baslik').value;
-            const sure = parseInt(document.getElementById('sure').value);
-            
-            // Kullanıcının görünen adını Firestore'dan çekme
-            const userDoc = await db.collection("users").doc(user.uid).get();
-            const gonderenAdi = userDoc.exists ? userDoc.data().kullaniciAdi : "Anonim Kullanıcı";
-
-
-            const yeniAnket = {
-                baslik: baslik,
-                resimA: resimVerileri.resimA, 
-                resimB: resimVerileri.resimB, 
-                oylar: { A: 0, B: 0 }, // Oyları bir alt obje olarak tutacağız
-                oyKullananlar: [], // Bu diziye oy kullanan Firebase UID'leri eklenecek
-                sureSaniye: sure,
-                sureBasi: firebase.firestore.FieldValue.serverTimestamp(), // Sunucu saati ile kayıt
-                gonderenId: user.uid,
-                gonderenAdi: gonderenAdi,
-                aktif: true // Anketin hala aktif olup olmadığını tutar
-            };
-
-            try {
-                // Anket verisini Firestore'a ekle
-                await db.collection("polls").add(yeniAnket);
-
-                alert("Anket başarıyla yayınlandı ve herkesle paylaşıldı!");
-                window.location.href = 'anlikgorus.html';
-            } catch (error) {
-                console.error("Anket yayınlanırken hata oluştu: ", error);
-                alert("Anket yayınlanırken bir hata oluştu: " + error.message);
-            }
+            // 1. Firebase Authentication ile kullanıcı oluştur
+            auth.createUserWithEmailAndPassword(yeniEposta, yeniSifre)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    // 2. Kullanıcının görünen adını Firestore'a kaydet
+                    return db.collection("users").doc(user.uid).set({
+                        kullaniciAdi: yeniKullaniciAdi,
+                        eposta: yeniEposta,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    alert("Kayıt başarılı! Lütfen Giriş Yapın.");
+                    formDegistir(); 
+                })
+                .catch((error) => {
+                    alert("Kayıt HATA! \nHata: " + error.message);
+                });
         });
     </script>
 </body>
