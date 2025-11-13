@@ -22,8 +22,6 @@
         .drop-area p { margin: 0; color: #007bff; font-weight: bold; }
         .preview-img { max-width: 100%; max-height: 150px; display: none; margin-top: 10px; border-radius: 5px; }
         .file-input { display: none; }
-        
-        /* YENİ: Metin Alanı Stili */
         .metin-secenek { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 10px; box-sizing: border-box; }
     </style>
 </head>
@@ -50,7 +48,7 @@
                         <p>Fotoğrafı Buraya Sürükle veya Tıkla</p>
                         <img id="preview1" class="preview-img" alt="Önizleme 1">
                     </div>
-                    <input type="text" id="metin1" class="metin-secenek" placeholder="Ya da seçenek metnini yazın (Örn: Kırmızı)">
+                    <input type="text" id="metin1" class="metin-secenek" placeholder="Ya da seçenek metnini yazın (Örn: Bordo)">
                 </div>
                 
                 <div class="secenek-alan">
@@ -70,6 +68,26 @@
         <a href="anlikgorus.html" class="geri-don">Ana Akışa Geri Dön</a>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // YAPILANDIRMA BİLGİLERİNİZ BURADA
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqKxitrc3P8LXzHHhZb2utDay7WSvN1-w",
+            authDomain: "anket-61fdf.firebaseapp.com",
+            projectId: "anket-61fdf",
+            storageBucket: "anket-61fdf.firebasestorage.app",
+            messagingSenderId: "1009992434674",
+            appId: "1:1009992434674:web:17a4b4d0dbf300c42b216b",
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+    </script> 
+
     <script>
         // Giriş Kontrolü
         firebase.auth().onAuthStateChanged(user => {
@@ -80,10 +98,10 @@
         });
         
         // --------------------------------------------------
-        // SÜRÜKLE-BIRAK VE DOSYA OKUMA MANTIĞI (GÜNCELLENDİ)
+        // SÜRÜKLE-BIRAK VE DOSYA OKUMA MANTIĞI
         // --------------------------------------------------
         const dropAreas = document.querySelectorAll('.drop-area');
-        const resimVerileri = { resimA: null, resimB: null }; // Base64 verilerini tutar
+        const resimVerileri = { resimA: null, resimB: null }; 
 
         function handleFile(file, secenekAdi) {
             if (!file || !file.type.startsWith('image/')) {
@@ -99,9 +117,8 @@
                 const previewImg = document.getElementById('preview' + secenekNo);
                 const dropArea = document.querySelector(`.drop-area[data-secenek="${secenekAdi === 'resimA' ? 'A' : 'B'}"]`);
                 
-                // Metin alanını temizle
+                // Metin alanını temizle ve resmi göster
                 document.getElementById('metin' + secenekNo).value = ''; 
-
                 previewImg.src = e.target.result;
                 previewImg.style.display = 'block';
                 dropArea.querySelector('p').style.display = 'none'; 
@@ -109,19 +126,14 @@
             reader.readAsDataURL(file);
         }
 
-        // Tıklama sorununu çözen ana döngü
+        // Tıklama, sürükleme ve metin input olay dinleyicileri
         dropAreas.forEach(area => {
-            const secenekKodu = area.dataset.secenek; // 'A' veya 'B'
+            const secenekKodu = area.dataset.secenek; 
             const secenekNo = secenekKodu === 'A' ? 1 : 2;
             const secenekAdi = secenekKodu === 'A' ? 'resimA' : 'resimB';
             const fileInput = document.getElementById('dosya' + secenekNo);
 
-            // Tıklama olayını file input'a bağla (Çözüm 1)
-            area.addEventListener('click', () => {
-                fileInput.click();
-            });
-
-            // Sürükleme ve Bırakma
+            area.addEventListener('click', () => { fileInput.click(); });
             area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('highlight'); });
             area.addEventListener('dragleave', (e) => { area.classList.remove('highlight'); });
             area.addEventListener('drop', (e) => {
@@ -130,8 +142,6 @@
                 const file = e.dataTransfer.files[0];
                 handleFile(file, secenekAdi);
             });
-            
-            // Dosya input'u değiştiğinde (Tıklama sonrası)
             fileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 handleFile(file, secenekAdi);
@@ -139,14 +149,14 @@
             
             // Metin alanı değiştiğinde resim verisini temizle
             document.getElementById('metin' + secenekNo).addEventListener('input', () => {
-                resimVerileri[secenekAdi] = null; // Base64 verisini temizle
-                document.getElementById('preview' + secenekNo).style.display = 'none'; // Önizlemeyi gizle
-                area.querySelector('p').style.display = 'block'; // Sürükle yazısını göster
+                resimVerileri[secenekAdi] = null;
+                document.getElementById('preview' + secenekNo).style.display = 'none';
+                area.querySelector('p').style.display = 'block';
             });
         });
 
         // --------------------------------------------------
-        // ANKET OLUŞTURMA VE FIREBASE'E KAYIT MANTIĞI (GÜNCELLENDİ)
+        // ANKET OLUŞTURMA VE FIREBASE'E KAYIT MANTIĞI
         // --------------------------------------------------
         const anketFormu = document.getElementById('anket-olustur-formu');
 
@@ -157,8 +167,8 @@
             const metin1 = document.getElementById('metin1').value.trim();
             const metin2 = document.getElementById('metin2').value.trim();
             
-            // Kontrol: Hem resim hem de metin yoksa uyarı ver
-            if (!resimVerileri.resimA && metin1 === '' || !resimVerileri.resimB && metin2 === '') {
+            // Zorunlu alan kontrolü: Hem resim hem de metin yoksa uyarı ver
+            if ((!resimVerileri.resimA && metin1 === '') || (!resimVerileri.resimB && metin2 === '')) {
                 alert("Lütfen her iki seçenek için de ya bir resim yükleyin ya da seçenek metni yazın.");
                 return;
             }
@@ -166,12 +176,17 @@
             const baslik = document.getElementById('baslik').value;
             const sure = parseInt(document.getElementById('sure').value);
             
-            const userDoc = await db.collection("users").doc(user.uid).get();
-            const gonderenAdi = userDoc.exists ? userDoc.data().kullaniciAdi : "Anonim Kullanıcı";
+            // Kullanıcının adını çekme (try-catch bloğu ile sağlamlaştırılmış)
+            let gonderenAdi = "Anonim Kullanıcı";
+            try {
+                 const userDoc = await db.collection("users").doc(user.uid).get();
+                 gonderenAdi = userDoc.exists ? userDoc.data().kullaniciAdi : "Anonim Kullanıcı";
+            } catch (error) {
+                console.warn("Gönderen adı çekilemedi, Anonim kullanılıyor. Hata:", error.message);
+            }
 
             const yeniAnket = {
                 baslik: baslik,
-                // Resim yoksa, metni kaydet
                 resimA: resimVerileri.resimA || null,
                 metinA: metin1 || null,
                 resimB: resimVerileri.resimB || null,
@@ -192,7 +207,7 @@
                 alert("Anket başarıyla yayınlandı ve herkesle paylaşıldı!");
                 window.location.href = 'anlikgorus.html';
             } catch (error) {
-                console.error("Anket yayınlanırken hata oluştu: ", error);
+                console.error("Anket yayınlanırken Firebase hatası: ", error);
                 alert("Anket yayınlanırken bir hata oluştu: " + error.message);
             }
         });
