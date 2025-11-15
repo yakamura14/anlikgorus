@@ -1,143 +1,137 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AnlıkGörüş - Giriş / Kayıt</title>
+    <title>Giriş / Kayıt</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .auth-container { width: 90%; max-width: 400px; background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .container { max-width: 400px; width: 90%; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
         h1 { color: #007bff; text-align: center; margin-bottom: 30px; }
-        h2 { text-align: center; color: #444; margin-top: 0; margin-bottom: 25px; }
         .input-grup { margin-bottom: 20px; }
         .input-grup label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
         .input-grup input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .buton { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; transition: background-color 0.3s ease; }
-        #giris-buton { background-color: #007bff; color: white; margin-bottom: 15px; }
-        #kayit-buton { background-color: #28a745; color: white; }
-        #giris-buton:hover, #kayit-buton:hover { opacity: 0.9; }
-        .gecis-metni { text-align: center; margin-top: 25px; color: #666; cursor: pointer; }
-        .form-kayit { display: none; }
+        .buton { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; background-color: #007bff; color: white; transition: background-color 0.3s ease; }
+        .buton:hover { background-color: #0056b3; }
+        .gecis-metni { text-align: center; margin-top: 20px; color: #555; }
+        .gecis-metni button { background: none; border: none; color: #007bff; cursor: pointer; font-weight: bold; padding: 0; font-size: 16px; }
+        #kayit-formu { display: none; }
     </style>
 </head>
 <body>
-    <div class="auth-container">
+    <div class="container">
         <h1>AnlıkGörüş</h1>
 
-        <form id="giris-formu" class="form-giris">
-            <h2>Giriş Yap</h2>
+        <form id="giris-formu">
             <div class="input-grup">
-                <label for="girisEposta">E-posta</label>
-                <input type="email" id="girisEposta" required>
+                <label for="giris-email">E-posta</label>
+                <input type="email" id="giris-email" required>
             </div>
             <div class="input-grup">
-                <label for="girisSifre">Şifre</label>
-                <input type="password" id="girisSifre" required>
+                <label for="giris-sifre">Şifre</label>
+                <input type="password" id="giris-sifre" required>
             </div>
-            <button type="submit" class="buton" id="giris-buton">Giriş Yap</button>
+            <button type="submit" class="buton">Giriş Yap</button>
         </form>
 
-        <form id="kayit-formu" class="form-kayit">
-            <h2>Kayıt Ol</h2>
+        <form id="kayit-formu">
             <div class="input-grup">
-                <label for="kayitKullaniciAdi">Kullanıcı Adı (Görüntülenecek Ad)</label>
-                <input type="text" id="kayitKullaniciAdi" required>
-            </div>
-             <div class="input-grup">
-                <label for="kayitEposta">E-posta</label>
-                <input type="email" id="kayitEposta" required>
+                <label for="kayit-kullanici-adi">Kullanıcı Adı</label>
+                <input type="text" id="kayit-kullanici-adi" required>
             </div>
             <div class="input-grup">
-                <label for="kayitSifre">Şifre</label>
-                <input type="password" id="kayitSifre" required>
+                <label for="kayit-email">E-posta</label>
+                <input type="email" id="kayit-email" required>
             </div>
-            <button type="submit" class="buton" id="kayit-buton">Hesap Oluştur</button>
+            <div class="input-grup">
+                <label for="kayit-sifre">Şifre (min. 6 karakter)</label>
+                <input type="password" id="kayit-sifre" required>
+            </div>
+            <button type="submit" class="buton" style="background-color: #28a745;">Kayıt Ol</button>
         </form>
 
-        <p class="gecis-metni" onclick="formDegistir()">Hala hesabın yok mu? **Kayıt Ol**</p>
+        <div class="gecis-metni">
+            <p id="gecis-paragraf">Hesabın yok mu? <button type="button" onclick="formDegistir()">Kayıt Ol</button></p>
+        </div>
     </div>
 
-    <!-- FIREBASE KÜTÜPHANE VE YAPILANDIRMASI (SDK v8) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
-        // YAPILANDIRMA BİLGİLERİNİZ BURADA
+        // 🔥 LÜTFEN KENDİ FIREBASE YAPILANDIRMA BİLGİLERİNİZİ EKLEYİN 🔥
         const firebaseConfig = {
-            apiKey: "AIzaSyDqKxitrc3P8LXzHHhZb2utDay7WSvN1-w",
-            authDomain: "anket-61fdf.firebaseapp.com",
-            projectId: "anket-61fdf",
-            storageBucket: "anket-61fdf.firebasestorage.app",
-            messagingSenderId: "1009992434674",
-            appId: "1:1009992434674:web:17a4b4d0dbf300c42b216b",
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID",
         };
 
-        // Firebase'i Başlat
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
     </script> 
-    
+
     <script>
+        // Form Geçişi
         var girisFormu = document.getElementById('giris-formu');
         var kayitFormu = document.getElementById('kayit-formu');
-        var gecisMetni = document.querySelector('.gecis-metni');
+        var gecisParagraf = document.getElementById('gecis-paragraf');
         var kayitModu = false;
 
         function formDegistir() {
-            kayitModu = !kayitModu;
             if (kayitModu) {
-                girisFormu.style.display = 'none';
-                kayitFormu.style.display = 'block';
-                gecisMetni.innerHTML = 'Zaten hesabın var mı? **Giriş Yap**';
-            } else {
                 girisFormu.style.display = 'block';
                 kayitFormu.style.display = 'none';
-                gecisMetni.innerHTML = 'Hala hesabın yok mu? **Kayıt Ol**';
+                gecisParagraf.innerHTML = 'Hesabın yok mu? <button type="button" onclick="formDegistir()">Kayıt Ol</button>';
+            } else {
+                girisFormu.style.display = 'none';
+                kayitFormu.style.display = 'block';
+                gecisParagraf.innerHTML = 'Hesabın var mı? <button type="button" onclick="formDegistir()">Giriş Yap</button>';
             }
+            kayitModu = !kayitModu;
         }
 
         // ---------- GİRİŞ İŞLEMİ (FIREBASE) ----------
         girisFormu.addEventListener('submit', function(e) {
-            e.preventDefault(); 
-            var eposta = document.getElementById('girisEposta').value;
-            var sifre = document.getElementById('girisSifre').value;
-            
-            auth.signInWithEmailAndPassword(eposta, sifre)
+            e.preventDefault();
+            const email = document.getElementById('giris-email').value;
+            const password = document.getElementById('giris-sifre').value;
+
+            auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
-                    alert("Giriş BAŞARILI! Hoş geldiniz.");
-                    window.location.href = 'anlikgorus.html'; 
+                    alert("Başarıyla giriş yapıldı!");
+                    window.location.href = 'anlikgorus.html';
                 })
                 .catch((error) => {
-                    alert("Giriş HATA! Lütfen e-posta veya şifrenizi kontrol edin. \nHata: " + error.message);
+                    alert("Giriş hatası: " + error.message);
                 });
         });
 
         // ---------- KAYIT İŞLEMİ (FIREBASE) ----------
         kayitFormu.addEventListener('submit', function(e) {
-            e.preventDefault(); 
-            var yeniKullaniciAdi = document.getElementById('kayitKullaniciAdi').value;
-            var yeniEposta = document.getElementById('kayitEposta').value;
-            var yeniSifre = document.getElementById('kayitSifre').value;
+            e.preventDefault();
+            const kullaniciAdi = document.getElementById('kayit-kullanici-adi').value;
+            const email = document.getElementById('kayit-email').value;
+            const password = document.getElementById('kayit-sifre').value;
 
-            // 1. Firebase Authentication ile kullanıcı oluştur
-            auth.createUserWithEmailAndPassword(yeniEposta, yeniSifre)
+            auth.createUserWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
                     
-                    // 2. Kullanıcının görünen adını Firestore'a kaydet
+                    // Kullanıcı adını Firestore'a kaydet
                     return db.collection("users").doc(user.uid).set({
-                        kullaniciAdi: yeniKullaniciAdi,
-                        eposta: yeniEposta,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        kullaniciAdi: kullaniciAdi,
+                        email: email
+                    }).then(() => {
+                        alert("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.");
+                        formDegistir(); // Giriş formuna geri dön
                     });
                 })
-                .then(() => {
-                    alert("Kayıt başarılı! Lütfen Giriş Yapın.");
-                    formDegistir(); 
-                })
                 .catch((error) => {
-                    alert("Kayıt HATA! \nHata: " + error.message);
+                    alert("Kayıt hatası: " + error.message);
                 });
         });
     </script>
