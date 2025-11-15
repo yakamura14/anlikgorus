@@ -174,7 +174,12 @@
             }
 
             const baslik = document.getElementById('baslik').value;
+            // Kullanıcının girdiği süreyi al
             const sure = parseInt(document.getElementById('sure').value);
+            
+            // 🔥 ZAMAN TAMPONU ÇÖZÜMÜ: Süreye 5 saniye ekle
+            const SURE_TAMPONU_SANIYE = 5; 
+            const yeniSureSaniye = sure + SURE_TAMPONU_SANIYE; 
             
             // Kullanıcının adını çekme
             let gonderenAdi = "Anonim Kullanıcı";
@@ -194,7 +199,7 @@
                 
                 oylar: { A: 0, B: 0 }, 
                 oyKullananlar: [], 
-                sureSaniye: sure,
+                sureSaniye: yeniSureSaniye, // TAMPONLANMIŞ SÜREYİ KULLAN
                 sureBasi: firebase.firestore.FieldValue.serverTimestamp(), 
                 gonderenId: user.uid,
                 gonderenAdi: gonderenAdi,
