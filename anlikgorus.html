@@ -21,7 +21,6 @@
         .anket-baslik { text-align: center; color: #333; font-size: 18px; margin-bottom: 15px; }
         .secenekler-konteyner { display: flex; gap: 8px; height: 250px; }
         .secenek { flex: 1; position: relative; cursor: pointer; overflow: hidden; border-radius: 8px; transition: transform 0.2s; }
-        /* Resim Olmadığında Metnin Daha Net Görünmesi İçin Ayarlar */
         .resim { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
         .oy-gosterge { position: absolute; bottom: 0; left: 0; height: 100%; width: 0%; background: rgba(0, 123, 255, 0.4); z-index: 2; transition: width 0.5s ease-out; }
         .oy-yuzdesi { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; font-weight: bold; z-index: 3; }
@@ -52,12 +51,12 @@
     <script>
         // LÜTFEN KENDİ FIREBASE YAPILANDIRMA BİLGİLERİNİZİ EKLEYİN
         const firebaseConfig = {
-            apiKey: "AIzaSyDqKxitrc3P8LXzHHhZb2utDay7WSvN1-w",
-            authDomain: "anket-61fdf.firebaseapp.com",
-            projectId: "anket-61fdf",
-            storageBucket: "anket-61fdf.firebasestorage.app",
-            messagingSenderId: "1009992434674",
-            appId: "1:1009992434674:web:17a4b4d0dbf300c42b216b",
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID",
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -93,7 +92,7 @@
         // ------------- KART OLUŞTURMA VE GÜNCELLEME -------------
         
         function anketKartiOlustur(docId, anket) {
-            if(!currentUserId) return; // Kullanıcı ID'si yoksa kart oluşturma
+            if(!currentUserId) return; 
 
             const oyKullanildi = anket.oyKullananlar && anket.oyKullananlar.includes(currentUserId);
             const oylanmisClass = oyKullanildi ? 'oylanmis' : '';
@@ -108,13 +107,12 @@
             const clickHandler = tiklamaEngeli ? '' : `onclick="oyKullan('${docId}', 'A')"`;
             const clickHandler2 = tiklamaEngeli ? '' : `onclick="oyKullan('${docId}', 'B')"`;
             
-            // Resim/Metin Kontrolleri
             const resimA_var = !!anket.resimA;
             const resimB_var = !!anket.resimB;
 
-            // Kart zaten varsa sadece oy yüzdelerini güncelle
             const existingCard = document.querySelector(`.anket-karti[data-anket-id="${docId}"]`);
             if (existingCard) {
+                // Sadece yüzde ve görünüm güncellenir
                 existingCard.querySelector('#yuzde-A-' + docId).innerHTML = `${yuzdeA}%`;
                 existingCard.querySelector('#yuzde-B-' + docId).innerHTML = `${yuzdeB}%`;
                 existingCard.querySelector('.A-gosterge').style.width = `${yuzdeA}%`;
@@ -153,7 +151,6 @@
                 </div>
             `;
             
-            // En üste ekle
             anketAkisi.insertAdjacentHTML('afterbegin', newCardHTML);
             
             // Yeni kart için zamanlayıcıyı başlat
@@ -166,7 +163,6 @@
         // ------------- FIREBASE GERÇEK ZAMANLI DİNLEME -------------
         
         function anketleriDinle() {
-            // Sadece aktif anketleri (aktif: true) ve en yeni 50 anketi getir
             db.collection("polls")
               .where("aktif", "==", true)
               .orderBy("sureBasi", "desc")
@@ -180,7 +176,6 @@
                     const anketData = change.doc.data();
 
                     if (change.type === "added" || change.type === "modified") {
-                        // Eğer anket artık aktif değilse, kartı kaldırma işlemi aşağıda halledilecek
                         anketKartiOlustur(docId, anketData);
                     } else if (change.type === "removed") {
                         const kartToRemove = document.querySelector(`.anket-karti[data-anket-id="${docId}"]`);
@@ -194,7 +189,6 @@
 
             }, error => {
                 console.error("Firebase dinleme hatası:", error);
-                // Hata durumunda ekrana tekrar "Anketler Yükleniyor" yerine hata mesajı yazdır
                 anketAkisi.innerHTML = '<p style="text-align: center; color: red;">Veri yüklenirken hata oluştu. (Konsolu kontrol edin)</p>';
             });
         }
@@ -216,21 +210,19 @@
                     if (!doc.exists) { throw new Error("Anket bulunamadı!"); }
                     
                     const anket = doc.data();
-                    
-                    // 1. Süre kontrolü
+
+                    // 🔥 YENİ SÜRE KONTROLÜ: Tarayıcı saati ile bitiş anı karşılaştırılır
                     const sureBasiMs = anket.sureBasi.toDate().getTime();
-                    const sureGecen = Math.floor((Date.now() - sureBasiMs) / 1000);
-                    const kalanSaniye = anket.sureSaniye - sureGecen;
-                    if (kalanSaniye <= 0) {
-                        // Eğer süre bittiyse anketi pasif yap
-                        transaction.update(anketRef, { aktif: false });
-                        throw new Error("Oylama süresi sona ermiştir!"); 
+                    const bitisZamaniMs = sureBasiMs + (anket.sureSaniye * 1000);
+                    if (bitisZamaniMs <= Date.now()) {
+                         transaction.update(anketRef, { aktif: false });
+                         throw new Error("Oylama süresi sona ermiştir!"); 
                     }
 
-                    // 2. Oy kullanıldı kontrolü
+                    // Oy kullanıldı kontrolü
                     if (anket.oyKullananlar && anket.oyKullananlar.includes(currentUserId)) {
                         alert("Bu ankete daha önce oy kullandınız. Teşekkürler!");
-                        return; // Transaction'dan çık
+                        return;
                     }
 
                     const yeniOySayisi = (anket.oylar[secim] || 0) + 1;
@@ -245,20 +237,24 @@
                 alert("Oyunuz başarıyla kaydedildi!");
 
             } catch (error) {
-                console.error("Oy kullanma hatası:", error);
-                alert("Oy kullanırken bir hata oluştu: " + error.message);
+                if (error.message && error.message.includes("Oylama süresi sona ermiştir!")) {
+                     alert(error.message);
+                } else {
+                     console.error("Oy kullanma hatası:", error);
+                     alert("Oy kullanırken bir hata oluştu: " + error.message);
+                }
             }
         }
         
         // ------------- SÜRE SAYACI MANTIĞI -------------
         
         function sureyiGuncelle(docId, anket) {
-            // sureBasi henüz gelmemişse veya fonksiyon değilse (Base64 data vs.) çık
+            // sureBasi'nin Timestamp objesi olduğundan emin ol
             if (!anket.sureBasi || typeof anket.sureBasi.toDate !== 'function') return; 
 
             const sureBasiMs = anket.sureBasi.toDate().getTime();
-            const sureGecen = Math.floor((Date.now() - sureBasiMs) / 1000);
-            const kalanSaniye = anket.sureSaniye - sureGecen;
+            const bitisZamaniMs = sureBasiMs + (anket.sureSaniye * 1000); // Bitiş anını hesapla
+            const kalanSaniye = Math.floor((bitisZamaniMs - Date.now()) / 1000); // Kalan süreyi tarayıcı saatiyle karşılaştırarak bul
 
             const sureSayaci = document.getElementById(`sure-sayaci-${docId}`);
             const kart = document.querySelector(`.anket-karti[data-anket-id="${docId}"]`);
@@ -266,12 +262,11 @@
             if (kalanSaniye <= 0) {
                 if(sureSayaci) sureSayaci.innerHTML = "Oylama BİTTİ!";
                 
-                if(anket.aktif !== false) {
-                     // Süre dolduğunda aktif durumunu pasif yap
-                     db.collection("polls").doc(docId).update({aktif: false}).catch(e => console.error("Aktif durumu güncellenemedi:", e));
-                }
-                
                 if (kart) {
+                    if(anket.aktif !== false) {
+                         // Süre dolduğunda aktif durumunu pasif yap (Sorguyu temiz tutmak için)
+                         db.collection("polls").doc(docId).update({aktif: false});
+                    }
                     // Kartı yavaşça kaldır
                     kart.style.opacity = '0';
                     setTimeout(() => {
